@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZeroByte Studios | Apps &amp; Games</title>
+<meta name="description" content="Desarrollo independiente de juegos y herramientas 100% offline.">
+<style>
+  :root{
+    --bg: #050814;
+    --bg-alt: #070c1c;
+    --card: #0f172a;
+    --card-2: #0b1226;
+    --line: #17223f;
+    --cyan: #00f0ff;
+    --green: #00ff66;
+    --text: #cddaf5;
+    --text-dim: #6d7ba3;
+    --danger: #ff2e63;
+    --font-mono: 'Consolas', 'SFMono-Regular', 'Liberation Mono', Menlo, Monaco, monospace;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  }
+
+  ::selection{ background: var(--cyan); color: #001014; }
+
+  a{ color: inherit; text-decoration: none; }
+
+  /* ---------- Background grid + scanlines (signature atmosphere) ---------- */
+  .bg-grid{
+    position: fixed; inset: 0; z-index: -2;
+    background-image:
+      linear-gradient(to right, rgba(0,240,255,0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,240,255,0.06) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+    animation: gridDrift 30s linear infinite;
+  }
+  @keyframes gridDrift{
+    0%{ background-position: 0 0, 0 0; }
+    100%{ background-position: 42px 42px, 42px 42px; }
+  }
+  .bg-scanlines{
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0) 0px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,240,255,0.018) 3px,
+      rgba(0,0,0,0) 4px
+    );
+    opacity: .6;
+  }
+  .bg-glow{
+    position: fixed; z-index: -2; pointer-events:none;
+    width: 60vw; height: 60vw; max-width: 900px; max-height: 900px;
+    top: -20%; right: -15%;
+    background: radial-gradient(circle, rgba(0,240,255,0.10) 0%, rgba(0,240,255,0) 70%);
+    filter: blur(10px);
+  }
+  .bg-glow.two{
+    top: auto; bottom: -25%; left: -15%; right: auto;
+    background: radial-gradient(circle, rgba(0,255,102,0.08) 0%, rgba(0,255,102,0) 70%);
+  }
+
+  /* ---------- Layout helpers ---------- */
+  .wrap{ max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+  section{ position: relative; }
+
+  .eyebrow{
+    font-family: var(--font-mono);
+    font-size: .78rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--green);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .eyebrow::before{
+    content: "";
+    width: 8px; height: 8px;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green), 0 0 16px var(--green);
+    animation: blink 1.6s ease-in-out infinite;
+  }
+  @keyframes blink{ 0%,100%{ opacity:1;} 50%{ opacity:.25; } }
+
+  h1,h2,h3{ font-family: var(--font-mono); margin: 0; letter-spacing: .01em; }
+
+  /* ---------- Top nav ---------- */
+  .topnav{
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(10px);
+    background: rgba(5,8,20,0.75);
+    border-bottom: 1px solid var(--line);
+  }
+  .topnav .wrap{
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 16px; padding-bottom: 16px;
+  }
+  .brand{
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--cyan);
+    letter-spacing: .04em;
+  }
+  .brand span{ color: var(--green); }
+  .navlinks{ display:flex; gap: 28px; font-family: var(--font-mono); font-size: .85rem; }
+  .navlinks a{ color: var(--text-dim); position: relative; padding: 4px 0; transition: color .25s ease; }
+  .navlinks a:hover{ color: var(--cyan); }
+  .navlinks a::after{
+    content:""; position:absolute; left:0; bottom:-2px; width:0; height:1px;
+    background: var(--cyan); transition: width .25s ease;
+  }
+  .navlinks a:hover::after{ width: 100%; }
+  .navtoggle{ display:none; }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    padding: 110px 0 90px;
+    text-align: center;
+    display:flex; flex-direction: column; align-items:center;
+  }
+  .terminal{
+    font-family: var(--font-mono);
+    font-size: .82rem;
+    color: var(--text-dim);
+    border: 1px solid var(--line);
+    background: rgba(15,23,42,0.5);
+    border-radius: 4px;
+    padding: 10px 16px;
+    margin-bottom: 34px;
+    display:inline-flex; align-items:center; gap: 10px;
+  }
+  .terminal .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .terminal .dot.r{ background:#ff5f56; }
+  .terminal .dot.y{ background:#ffbd2e; }
+  .terminal .dot.g{ background:#27c93f; }
+  .terminal .cmd{ color: var(--green); margin-left: 8px; }
+  .terminal .cmd::after{
+    content:"█"; color: var(--cyan); margin-left: 2px;
+    animation: blink 1s steps(1) infinite;
+  }
+
+  .hero h1{
+    font-size: clamp(2.1rem, 6vw, 4.2rem);
+    line-height: 1.05;
+    color: #eaf6ff;
+    text-shadow: 0 0 18px rgba(0,240,255,0.35);
+  }
+  .hero h1 .glitch{
+    position: relative;
+    display:inline-block;
+    color: var(--cyan);
+  }
+  .hero h1 .glitch::before,
+  .hero h1 .glitch::after{
+    content: attr(data-text);
+    position: absolute; left:0; top:0; width:100%;
+    overflow: hidden;
+    background: var(--bg);
+    clip-path: inset(0 0 0 0);
+  }
+  .hero h1 .glitch::before{
+    color: var(--green);
+    animation: glitchTop 5.2s infinite linear;
+  }
+  .hero h1 .glitch::after{
+    color: var(--danger);
+    animation: glitchBottom 6.1s infinite linear;
+  }
+  @keyframes glitchTop{
+    0%, 92%, 100%{ clip-path: inset(0 0 100% 0); transform: translate(0,0); opacity: 0;}
+    93%{ clip-path: inset(0 0 60% 0); transform: translate(-3px,-1px); opacity: .9;}
+    95%{ clip-path: inset(20% 0 40% 0); transform: translate(2px,1px); opacity: .9;}
+    97%{ clip-path: inset(60% 0 0 0); transform: translate(-2px,0); opacity: .9;}
+  }
+  @keyframes glitchBottom{
+    0%, 90%, 100%{ clip-path: inset(100% 0 0 0); transform: translate(0,0); opacity: 0;}
+    91%{ clip-path: inset(70% 0 0 0); transform: translate(3px,1px); opacity: .8;}
+    94%{ clip-path: inset(30% 0 40% 0); transform: translate(-2px,-1px); opacity: .8;}
+    96%{ clip-path: inset(0 0 70% 0); transform: translate(2px,0); opacity: .8;}
+  }
+
+  .hero p.subtitle{
+    max-width: 640px;
+    margin: 22px auto 0;
+    color: var(--text-dim);
+    font-size: 1.05rem;
+  }
+  .hero .cta-row{ margin-top: 36px; display:flex; gap: 16px; flex-wrap: wrap; justify-content:center; }
+
+  .btn{
+    font-family: var(--font-mono);
+    font-size: .85rem;
+    letter-spacing: .03em;
+    padding: 13px 24px;
+    border-radius: 3px;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    background: rgba(0,240,255,0.06);
+    cursor: pointer;
+    transition: all .25s ease;
+    display:inline-flex; align-items:center; gap:8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn::before{
+    content:""; position:absolute; inset:0;
+    background: var(--cyan);
+    transform: translateX(-101%);
+    transition: transform .25s ease;
+    z-index: -1;
+  }
+  .btn:hover{ color:#001217; box-shadow: 0 0 22px rgba(0,240,255,0.45); }
+  .btn:hover::before{ transform: translateX(0); }
+  .btn:focus-visible{ outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+  .btn.alt{ border-color: var(--green); color: var(--green); background: rgba(0,255,102,0.05); }
+  .btn.alt::before{ background: var(--green); }
+  .btn.alt:hover{ color:#001a08; box-shadow: 0 0 22px rgba(0,255,102,0.4); }
+
+  .btn.ghost{ border-color: var(--line); color: var(--text-dim); background: transparent; }
+  .btn.ghost::before{ background: var(--line); }
+  .btn.ghost:hover{ color: var(--text); box-shadow: none; }
+
+  /* ---------- Section headers ---------- */
+  .section-head{ text-align:center; margin-bottom: 50px; }
+  .section-head h2{
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    color: #eaf6ff; margin-top: 12px;
+  }
+  .section-head p{ color: var(--text-dim); max-width: 520px; margin: 12px auto 0; font-size: .95rem; }
+
+  section.catalog{ padding: 70px 0 40px; }
+
+  /* ---------- Project cards ---------- */
+  .grid-cards{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 26px;
+  }
+  .card{
+    position: relative;
+    background: linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 28px 24px 26px;
+    display: flex; flex-direction: column;
+    transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+  }
+  .card::before, .card::after{
+    content:""; position:absolute; width: 18px; height: 18px;
+    border: 2px solid transparent; transition: border-color .3s ease;
+  }
+  .card::before{ top: -1px; left: -1px; border-top-color: var(--cyan); border-left-color: var(--cyan); }
+  .card::after{ bottom: -1px; right: -1px; border-bottom-color: var(--cyan); border-right-color: var(--cyan); }
+  .card:hover{
+    transform: translateY(-6px);
+    border-color: rgba(0,240,255,0.35);
+    box-shadow: 0 18px 40px -20px rgba(0,240,255,0.35);
+  }
+  .card .tag{
+    align-self: flex-start;
+    font-family: var(--font-mono);
+    font-size: .68rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--bg);
+    background: var(--green);
+    padding: 4px 10px;
+    border-radius: 2px;
+    margin-bottom: 18px;
+  }
+  .card h3{ font-size: 1.25rem; color: #eaf6ff; margin-bottom: 10px; }
+  .card p.desc{ color: var(--text-dim); font-size: .92rem; flex-grow: 1; margin-bottom: 24px; }
+  .card .btn{ width: 100%; justify-content: center; margin-bottom: 10px; }
+  .card .btn:last-child{ margin-bottom: 0; }
+
+  /* subtle scan sweep on card hover */
+  .card .sweep{
+    position:absolute; inset:0; pointer-events:none; border-radius: 6px; overflow:hidden;
+  }
+  .card .sweep::after{
+    content:""; position:absolute; top:0; left:-60%; width: 40%; height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(0,240,255,0.08), transparent);
+    transform: skewX(-20deg);
+    transition: left .7s ease;
+  }
+  .card:hover .sweep::after{ left: 130%; }
+
+  /* ---------- Devlog / Blog ---------- */
+  section.devlog{ padding: 90px 0; }
+  .log-grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .log-card{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--green);
+    border-radius: 4px;
+    padding: 26px 26px 24px;
+    transition: border-color .3s ease, background .3s ease;
+  }
+  .log-card:hover{ border-left-color: var(--cyan); background: var(--card-2); }
+  .log-card .path{
+    font-family: var(--font-mono); font-size: .75rem; color: var(--text-dim);
+  }
+  .log-card .path .prompt{ color: var(--green); }
+  .log-card h3{ margin-top: 14px; margin-bottom: 12px; font-size: 1.12rem; color: #eaf6ff; font-family: var(--font-body); font-weight: 700; }
+  .log-card p{ color: var(--text-dim); font-size: .92rem; margin: 0 0 10px; }
+  .log-card .meta{
+    display:flex; gap: 14px; margin-top: 16px; flex-wrap: wrap;
+    font-family: var(--font-mono); font-size: .72rem; color: var(--text-dim);
+  }
+  .log-card .meta span{ display:inline-flex; align-items:center; gap:6px; }
+  .log-card .meta .chip{
+    color: var(--cyan); border: 1px solid rgba(0,240,255,0.3); padding: 2px 8px; border-radius: 2px;
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    border-top: 1px solid var(--line);
+    padding: 46px 0 34px;
+    margin-top: 40px;
+  }
+  .footer-grid{
+    display:flex; justify-content: space-between; align-items:flex-start; flex-wrap: wrap; gap: 30px;
+  }
+  .footer-brand{ max-width: 340px; }
+  .footer-brand .brand{ font-size: 1rem; }
+  .footer-brand p{ color: var(--text-dim); font-size: .88rem; margin-top: 10px; }
+  .footer-links{ display:flex; gap: 60px; flex-wrap: wrap; }
+  .footer-col h4{
+    font-family: var(--font-mono); font-size: .75rem; letter-spacing:.12em; text-transform: uppercase;
+    color: var(--green); margin: 0 0 14px;
+  }
+  .footer-col a{
+    display:block; color: var(--text-dim); font-size: .9rem; margin-bottom: 10px; transition: color .2s ease;
+  }
+  .footer-col a:hover{ color: var(--cyan); }
+  .footer-bottom{
+    margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line);
+    display:flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    font-family: var(--font-mono); font-size: .76rem; color: var(--text-dim);
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px){
+    .grid-cards{ grid-template-columns: 1fr; }
+    .log-grid{ grid-template-columns: 1fr; }
+    .navlinks{
+      position: fixed; top: 62px; right: 0; height: calc(100vh - 62px);
+      width: 68%; max-width: 300px;
+      background: rgba(5,8,20,0.97);
+      border-left: 1px solid var(--line);
+      flex-direction: column; gap: 26px;
+      padding: 34px 26px;
+      transform: translateX(100%);
+      transition: transform .3s ease;
+    }
+    .navlinks.open{ transform: translateX(0); }
+    .navtoggle{
+      display:flex; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 6px;
+    }
+    .navtoggle span{ width: 22px; height: 2px; background: var(--cyan); display:block; }
+  }
+  @media (max-width: 560px){
+    .hero{ padding: 90px 0 60px; }
+    .footer-grid{ flex-direction: column; }
+    .footer-links{ gap: 34px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-scanlines"></div>
+<div class="bg-glow"></div>
+<div class="bg-glow two"></div>
+
+<header class="topnav">
+  <div class="wrap">
+    <a href="#top" class="brand">Zero<span>Byte</span> Studios</a>
+    <nav class="navlinks" id="navlinks">
+      <a href="#proyectos">Proyectos</a>
+      <a href="#devlog">Devlog</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <button class="navtoggle" id="navtoggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="navlinks">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero wrap">
+    <div class="terminal">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="cmd">user@zerobyte:~$ ./run_portfolio.sh</span>
+    </div>
+    <h1><span class="glitch" data-text="ZeroByte Studios">ZeroByte Studios</span> | Apps &amp; Games</h1>
+    <p class="subtitle">Desarrollo independiente de juegos y herramientas 100% offline.</p>
+    <div class="cta-row">
+      <a href="#proyectos" class="btn">▶ Ver proyectos</a>
+      <a href="#contacto" class="btn ghost">✉ Contacto</a>
+    </div>
+  </section>
+
+  <section class="catalog wrap" id="proyectos">
+    <div class="section-head">
+      <div class="eyebrow">Catálogo</div>
+      <h2>Proyectos en producción</h2>
+      <p>Todo se ejecuta en el navegador o como APK instalable. Sin conexión requerida, sin rastreo de datos.</p>
+    </div>
+
+    <div class="grid-cards">
+
+      <article class="card">
+        <div class="sweep"></div>
+        <span class="tag">Juego · Tower Defense</span>
+        <h3>Defensa Cibernética (DF)</h3>
+        <p class="desc">Estrategia táctica en Canvas 2D. Protege el núcleo del sistema contra oleadas de ciberataques.</p>
+        <a class="btn" href="https://7320256-arch.github.io/defensa-cibernetica/" target="_blank" rel="noopener noreferrer">▶️ Jugar en Web</a>
+        <a class="btn alt" href="https://www.mediafire.com/file/lzofjhem1wsu4wg/Def._Cibern%C3%A9tica.apk/file" target="_blank" rel="noopener noreferrer">📱 Descargar APK</a>
+      </article>
+
+      <article class="card">
+        <div class="sweep"></div>
+        <span class="tag">Juego · Gestión Deportiva</span>
+        <h3>Football Manager SV (FM SV)</h3>
+        <p class="desc">Administra tu equipo, gestiona alineaciones, finanzas y tácticas para ganar la liga.</p>
+        <a class="btn" href="https://7320256-arch.github.io/Retro-Football-Manager-SV/" target="_blank" rel="noopener noreferrer">⚽ Jugar en Web</a>
+        <a class="btn alt" href="https://www.mediafire.com/file/esjer0iy809cezm/FM_El_Salvador.apk/file" target="_blank" rel="noopener noreferrer">📱 Descargar APK</a>
+      </article>
+
+      <article class="card">
+        <div class="sweep"></div>
+        <span class="tag">App · Finanzas</span>
+        <h3>MiWallet Pro</h3>
+        <p class="desc">Gestor de presupuesto y control de gastos personales 100% privado y offline.</p>
+        <a class="btn" href="https://7320256-arch.github.io/MiWallet-Pro/" target="_blank" rel="noopener noreferrer">💼 Abrir App Web</a>
+        <a class="btn alt" href="https://www.mediafire.com/file/z8134omod7ik6m2/MiWallet.apk/file" target="_blank" rel="noopener noreferrer">📱 Descargar APK</a>
+      </article>
+
+    </div>
+  </section>
+
+  <section class="devlog wrap" id="devlog">
+    <div class="section-head">
+      <div class="eyebrow">Devlog</div>
+      <h2>Bitácora de desarrollo</h2>
+      <p>Notas breves sobre cómo se construyen estos proyectos, del prototipo a la build final.</p>
+    </div>
+
+    <div class="log-grid">
+
+      <article class="log-card">
+        <div class="path"><span class="prompt">$</span> cat devlog_01.log</div>
+        <h3>De la idea al Canvas: construyendo Defensa Cibernética con ayuda de IA</h3>
+        <p>El motor de oleadas y el pathfinding de Defensa Cibernética arrancaron como pseudocódigo generado junto a un asistente de IA, que después se depuró a mano línea por línea hasta correr de forma fluida en Canvas 2D puro, sin frameworks de por medio.</p>
+        <p>La build offline y el empaquetado a APK se resolvieron con herramientas nativas de Android, priorizando que el juego pese poco y no dependa de servidores externos para funcionar.</p>
+        <div class="meta">
+          <span class="chip">Canvas 2D</span>
+          <span class="chip">IA asistida</span>
+          <span class="chip">Offline-first</span>
+        </div>
+      </article>
+
+      <article class="log-card">
+        <div class="path"><span class="prompt">$</span> cat devlog_02.log</div>
+        <h3>MiWallet Pro y FM SV: privacidad primero, nube nunca</h3>
+        <p>Tanto MiWallet Pro como Football Manager SV guardan todos los datos del usuario en el propio dispositivo. La IA se usó para acelerar la lógica de cálculo financiero y las tablas de posiciones, mientras el almacenamiento local se implementó con tecnologías web nativas.</p>
+        <p>El resultado son dos apps que abren al instante, no piden registro y siguen funcionando aunque no haya señal de internet.</p>
+        <div class="meta">
+          <span class="chip">Almacenamiento local</span>
+          <span class="chip">Sin registro</span>
+          <span class="chip">Tecnologías nativas</span>
+        </div>
+      </article>
+
+    </div>
+  </section>
+</main>
+
+<footer id="contacto">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#top" class="brand">Zero<span>Byte</span> Studios</a>
+        <p>Desarrollo independiente de juegos y herramientas offline. Cada proyecto se construye para funcionar sin depender de la nube.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Proyectos</h4>
+          <a href="https://7320256-arch.github.io/defensa-cibernetica/" target="_blank" rel="noopener noreferrer">Defensa Cibernética</a>
+          <a href="https://7320256-arch.github.io/Retro-Football-Manager-SV/" target="_blank" rel="noopener noreferrer">Football Manager SV</a>
+          <a href="https://7320256-arch.github.io/MiWallet-Pro/" target="_blank" rel="noopener noreferrer">MiWallet Pro</a>
+        </div>
+        <div class="footer-col">
+          <h4>Contacto</h4>
+          <a href="mailto:cseuropa1890@gmail.com">cseuropa1890@gmail.com</a>
+          <a href="https://github.com/7320256-arch" target="_blank" rel="noopener noreferrer">GitHub · 7320256-arch</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span id="year-line">© 2026 ZeroByte Studios. Todos los derechos reservados.</span>
+      <span>Construido sin frameworks · HTML / CSS / JS puro</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    // Mobile nav toggle
+    var toggle = document.getElementById('navtoggle');
+    var nav = document.getElementById('navlinks');
+    toggle.addEventListener('click', function(){
+      var isOpen = nav.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+    nav.querySelectorAll('a').forEach(function(link){
+      link.addEventListener('click', function(){
+        nav.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    // Dynamic year in footer
+    var yearEl = document.getElementById('year-line');
+    var currentYear = new Date().getFullYear();
+    yearEl.textContent = '© ' + currentYear + ' ZeroByte Studios. Todos los derechos reservados.';
+
+    // Reveal cards / log entries on scroll
+    var revealTargets = document.querySelectorAll('.card, .log-card');
+    revealTargets.forEach(function(el){
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(18px)';
+      el.style.transition = 'opacity .6s ease, transform .6s ease';
+    });
+
+    if ('IntersectionObserver' in window){
+      var observer = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if (entry.isIntersecting){
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      revealTargets.forEach(function(el){ observer.observe(el); });
+    } else {
+      revealTargets.forEach(function(el){
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>
